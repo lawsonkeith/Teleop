@@ -1,9 +1,9 @@
-# Teleop
+## Teleop
 RC car teleop system with haptic feedback using C on a raspberry Pi.
 
 There are 2 modules:
-	teleop_client		runs on a laptop
-	teleop_server		runs on the pi
+	1.teleop_client		runs on a laptop
+	2.teleop_server		runs on the pi
 
 
 
