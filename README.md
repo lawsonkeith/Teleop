@@ -1,12 +1,23 @@
 ## Teleop
 RC car teleop system with haptic feedback using C on a raspberry Pi.
 
-There are 2 modules:
+There are 4 software modules:
 
-1. **teleop_client**		runs on a laptop
-2. **teleop_server**		runs on the pi
+1. **teleop_client**		- Laptop
+2. Web browser client		- Laptop 
+3. **teleop_server**		- Pi
+4. Motion webcam server		- Pi
+ 
+There are 6 hardware modules:
 
+1. XBOX 360 gamepad		- Laptop	
+2. Wireless xbox receiver	- Laptop
+3. MPU6050 IMU			- Pi
+4. Wifi dongle 1000mw		- Pi	
+5. DCDC Converter		- Pi
+6. Webcam			- Pi
 
+Functionally there is a remote RC car and a laptop operator control unit (Laptop).
 
 ##usage
 Acquire the windows XBOX wireless driver and install the drivers.  There's a tutorial here http://www.s-config.com/archived-xbox-360-receiver-install-for-win-xp-and-win-7/ if you buy a cheap Chinese copy and can't get it working.
