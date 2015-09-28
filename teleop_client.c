@@ -65,7 +65,7 @@
 #define NAME_LENGTH 128
 
 void FF_Rumble(unsigned int magnitude);
-void JS_Read(void);
+void JS_Read(int *Fore, int *Port);
 void FF_Init(char *device_file_name);
 void JS_Init(char *joy_file_name);
 void TimedTask (int sig);
@@ -78,26 +78,37 @@ void die(char *s);
 // Main shared structures
 struct ff_effect effects;	
 struct input_event play, stop;
+int Fore,Port;
 int fd_e,fd_j;
 struct itimerval old;
 struct itimerval new;
 struct sockaddr_in si_other;
 int sock;
-	
+
+// Define UDP msg type
+struct TMsg {
+	int	Fore;
+	int	Port;
+	int	Accel;
+	int spare[10];
+	char endmsg[10];
+}Msg;	
+	 
 	 
 // 20Hz timed task.  Put UDP Comms in here
 //	
 void TimedTask(int sig)
 {
-	static int x;
+	static int Accel;
+	int x;
 	
-	//JS_Read(&Fore,&Port);
-	//UDP_Send(Fore,Port,&Accel)
+	//printf("\n%d, %d",Fore,Port);
+	UDP_Send(Fore++, Port, &Accel);
 	
 	// 10Hz task
 	if(x % 2 == 0) {
-	//FF_Rumble(Accel);
-	;
+		//FF_Rumble(Accel);
+		;
 	}
 	
 	signal (sig, TimedTask);
@@ -108,11 +119,10 @@ void TimedTask(int sig)
 //	
 int main(int argc, char** argv)
 {
-	
 	char event_file_name[64];
 	char joy_file_name[64];
 	char ip_address[64];
-	int x;
+	//int x;
 	
 
 	/* Read args */
@@ -130,15 +140,12 @@ int main(int argc, char** argv)
 	FF_Init(event_file_name);
 	JS_Init(joy_file_name);
 	UDP_Init(ip_address);
-	
-	// test area
-	FF_Rumble(0x1000);
-	UDP_Send(x,x,&x);
-	
-	JS_Read();
 
 	// hand over to timed task
-	while(1);
+	while(1) {
+		JS_Read(&Fore,&Port);
+	}
+		
 	sleep(2);
 }//END main
 
@@ -147,12 +154,15 @@ int main(int argc, char** argv)
 //
 void UDP_Send(int Fore, int Port, int *Accel)
 {
-	char *message = "Yo!!!!!!!!!!!";
 	unsigned int  slen=sizeof(si_other);
 	char buf[BUFLEN];
   
+	Msg.Fore = Fore;
+	Msg.Port = Port;
+	Msg.Port++;
+	
 	//send the message
-	if (sendto(sock, message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1) 	{
+	if (sendto(sock, &Msg, sizeof(Msg) , 0 , (struct sockaddr *) &si_other, slen)==-1) 	{
 		die("sendto()");
 	}
 	 
@@ -160,11 +170,11 @@ void UDP_Send(int Fore, int Port, int *Accel)
 	//clear the buffer by filling null, it might have previously received data
 	memset(buf,'\0', BUFLEN);
 	//try to receive some data, this is a blocking call
-	if (recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1){
+	if (recvfrom(sock, &Msg, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1){
 		die("recvfrom()");
 	}
-	 
-	puts(buf);
+	
+	*Accel = Msg.Accel;
      
 }//END UDP_Send	
 
@@ -183,11 +193,8 @@ void UDP_Init(char *ip_address)
     si_other.sin_port = htons(PORT);
      
     if (inet_aton(ip_address , &si_other.sin_addr) == 0) {
-		printf("\n%s",ip_address);
-		fflush(stdout);
 		die("UDP_Init: aton");
     }
-	
 }//END UDP_Init
 
 
@@ -211,54 +218,48 @@ void Task_Init(void)
 	if (setitimer (ITIMER_REAL, &new, &old) < 0) {
       die("Task_Init: timer init failed\n");
 	}
+	
+	strcpy(Msg.endmsg,"EndMsg!");
 }//END Task_Init
 
 
 // JS_Read  Left axis is throttle, right axis is steering
+// [1] -32K  = max fore 	[3] -32K = max port
 //
-void JS_Read(void)
+void JS_Read(int *Fore, int *Port)
 {
 	unsigned char axes = 6;
 	unsigned char buttons = 4;
-	int *axis;
-	int *button;
-	int i;
+
 	struct js_event js;
+	int axis[32];
+	char button[32];
+	char x;
 
-	axis = calloc(axes, sizeof(int));
-	button = calloc(buttons, sizeof(char));
-
-	while (1) {
-		if (read(fd_j, &js, sizeof(struct js_event)) != sizeof(struct js_event)) {
-			die("\njstest: error reading");
-		}
-
-		switch(js.type & ~JS_EVENT_INIT) {
-		case JS_EVENT_BUTTON:
-			button[js.number] = js.value;
-			break;
-		case JS_EVENT_AXIS:
-			axis[js.number] = js.value;
-			break;
-		}
-
-		printf("\r");
-
-		if (axes) {
-			printf("Axes: ");
-			for (i = 0; i < axes; i++)
-				printf("%2d:%6d ", i, axis[i]);
-		}
-
-		if (buttons) {
-			printf("Btns: ");
-			for (i = 0; i < buttons; i++)
-				printf("%2d:%s ", i, button[i] ? "on " : "off");
-		}
-
-		fflush(stdout);
+	//read
+	if (read(fd_j, &js, sizeof(struct js_event)) != sizeof(struct js_event)) {
+		die("\nJS_Read: Error reading gamepad, is it connected?");
 	}
 
+	//btn or axes msg?
+	switch(js.type & ~JS_EVENT_INIT) {
+	case JS_EVENT_BUTTON:
+		button[js.number] = js.value;
+		break;
+	case JS_EVENT_AXIS:
+		axis[js.number] = js.value;
+		break;
+	}
+
+	//read off the 2 vals we are interested in
+	if (axes) {
+		*Fore = axis[1];
+		*Port = axis[3];
+	}
+
+	if (buttons) {
+		x = button[0];
+	}
 }//END JS_Read
 
 
@@ -273,7 +274,7 @@ void JS_Init(char *joy_file_name)
 	char name[NAME_LENGTH] = "Unknown";
 	
 	if ((fd_j = open(joy_file_name, O_RDONLY)) < 0) {
-		die("jstest");
+		die("JS_Init: Error opening gamepad, is it connected?");
 	}
 	
 	ioctl(fd_j, JSIOCGVERSION, &version);
@@ -281,9 +282,9 @@ void JS_Init(char *joy_file_name)
 	ioctl(fd_j, JSIOCGBUTTONS, &buttons);
 	ioctl(fd_j, JSIOCGNAME(NAME_LENGTH), name);
 	
-	printf("Joystick (%s) has %d axes and %d buttons. Driver version is %d.%d.%d.\n",
+	printf("Joystick (%s) has %d axes and %d btns. Kernel driver version %d.%d.%d.\n",
 		name, axes, buttons, version >> 16, (version >> 8) & 0xff, version & 0xff);
-	printf("Testing ... (interrupt to exit)\n");
+	printf("Run ... (Ctrl+C to exit)\n");
 }//END JS_Init
 	
 
@@ -363,3 +364,7 @@ void die(char *s)
     exit(1);
     
 }//END die
+
+//printf("\n\n\nsjfjshdfjskhdf hjshdjf hsdf >> %s",Msg.endmsg);
+	//printf("sfhsdghsf\n\n");
+	//fflush(stdout);
