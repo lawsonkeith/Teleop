@@ -1,13 +1,12 @@
-all: teleop_client
+all: teleop_client teleop_server
 
 clean:
-	rm -f teleop_client libgamepad.so libgamepad.so.1 telop.o
+	rm -f teleop_client telop_client.o teleop_server telop_server.o
 
+teleop_client: teleop_client.c 
+	$(CC) -o $@ $< -Wl,-rpath,. -L.  -lcurses -ludev
 
-libgamepad.so: libgamepad.so.1
-	ln -sf libgamepad.so.1 libgamepad.so
-
-teleop: teleop.c 
+teleop_server: teleop_server.c 
 	$(CC) -o $@ $< -Wl,-rpath,. -L.  -lcurses -ludev
 
 install: libgamepad.so

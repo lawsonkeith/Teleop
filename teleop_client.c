@@ -68,11 +68,12 @@ void FF_Rumble(unsigned int magnitude);
 void JS_Read(void);
 void FF_Init(char *device_file_name);
 void JS_Init(char *joy_file_name);
-void Periodic (int sig);
+void TimedTask (int sig);
 void SetupTimer(void);
 void Task_Init(void);
 void UDP_Init(char *ip_address);
 void UDP_Send(int Fore, int Port, int *Accel);
+void die(char *s);
 
 // Main shared structures
 struct ff_effect effects;	
@@ -81,11 +82,12 @@ int fd_e,fd_j;
 struct itimerval old;
 struct itimerval new;
 struct sockaddr_in si_other;
+int sock;
 	
 	 
 // 20Hz timed task.  Put UDP Comms in here
 //	
-void TimedTask (int sig)
+void TimedTask(int sig)
 {
 	static int x;
 	
@@ -121,7 +123,7 @@ int main(int argc, char** argv)
 	}	
 	strncpy(event_file_name, argv[1], 64);
 	strncpy(joy_file_name, argv[2], 64);
-	strncpy(ip_address, argv[2], 64);
+	strncpy(ip_address, argv[3], 64);
 	
 	// Init timer task and joystick and UDP stack
 	Task_Init();
@@ -137,8 +139,6 @@ int main(int argc, char** argv)
 
 	// hand over to timed task
 	while(1);
-	
-	close(s);
 	sleep(2);
 }//END main
 
@@ -147,12 +147,12 @@ int main(int argc, char** argv)
 //
 void UDP_Send(int Fore, int Port, int *Accel)
 {
- 
-	printf("Enter message : ");
-	gets(message);
-	 
+	char *message = "Yo!!!!!!!!!!!";
+	unsigned int  slen=sizeof(si_other);
+	char buf[BUFLEN];
+  
 	//send the message
-	if (sendto(s, message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1) 	{
+	if (sendto(sock, message, strlen(message) , 0 , (struct sockaddr *) &si_other, slen)==-1) 	{
 		die("sendto()");
 	}
 	 
@@ -160,26 +160,21 @@ void UDP_Send(int Fore, int Port, int *Accel)
 	//clear the buffer by filling null, it might have previously received data
 	memset(buf,'\0', BUFLEN);
 	//try to receive some data, this is a blocking call
-	if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1){
+	if (recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1){
 		die("recvfrom()");
 	}
 	 
 	puts(buf);
      
-   
 }//END UDP_Send	
 
 
 
 // Initialise UDP to talk to the client
 //
-UDP_Init(ip_address)
+void UDP_Init(char *ip_address)
 {   
-    int s, i, slen=sizeof(si_other);
-    char buf[BUFLEN];
-    char message[BUFLEN];
- 
-    if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+    if ( (sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
         die("UDP_Init: socket");
     }
  
@@ -188,6 +183,8 @@ UDP_Init(ip_address)
     si_other.sin_port = htons(PORT);
      
     if (inet_aton(ip_address , &si_other.sin_addr) == 0) {
+		printf("\n%s",ip_address);
+		fflush(stdout);
 		die("UDP_Init: aton");
     }
 	
