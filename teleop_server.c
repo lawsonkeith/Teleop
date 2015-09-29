@@ -49,7 +49,7 @@
 #define GPIO_FORE 17
 #define GPIO_RED_LED 24
 #define GPIO_GN_LED 25
-//GPIO0/2, GPIO1/3, GPIO4, GPIO7 and GPIO8.
+//default  high GPIO >> GPIO0/2, GPIO1/3, GPIO4, GPIO7 and GPIO8.
 
 // Define UDP msg type
 struct TMsg {
@@ -64,7 +64,14 @@ struct TMsg {
 void die(char *s);
 void main(void);
 void sigalrm_handler(int);
-
+void GPIO_init(void);
+void GPIO_drive(int Fore,int Port,int Wdog);
+void GPIO_disable(void);
+void Accel_init(void);
+void Accel_read(int *Accel);
+void PiBlast(int channel, float value);
+void PiBlast_init(void);
+int fp;
 
 
 // Main server program.  This is polled by the client so the client controls the 
@@ -73,6 +80,7 @@ void sigalrm_handler(int);
 int main(void)
 {
     struct sockaddr_in si_me, si_other;
+    int Accel;
      
     int s, i, slen = sizeof(si_other) , recv_len;
     char buf[BUFLEN];
@@ -93,8 +101,12 @@ int main(void)
     if( bind(s , (struct sockaddr*)&si_me, sizeof(si_me) ) == -1){
         die("bind");
     }
-    
-    
+    //Start alarm
+    signal(SIGALRM, sigalrm_handler);   
+    alarm(1);   
+     
+    PiBlast_Init();
+    Accel_Init();
      
     //keep listening for data
     while(1)
@@ -102,78 +114,89 @@ int main(void)
         printf("Waiting for data...");
         fflush(stdout);
          
-        //try to receive some data, this is a blocking call
-        if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1)         {
+        //try to receive some data, this is a blocking call @@@@@@ WAIT UDP @@@@@@@@
+        if ((recv_len = recvfrom(s, &Msg, sizeof(Msg), 0, (struct sockaddr *) &si_other, &slen)) == -1)         {
             die("recvfrom()");
         }
+        
+        Accel_Read(&Accel);
+        GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
          
         //print details of the client/peer and the data received
         printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
         printf("Data: %s\n" , buf);
          
         //now reply the client with the same data
-        if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
-        {
+        if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1) {
             die("sendto()");
         }
-    }
+        
+        //kick alarm
+        alarm(1);
+    }//END while
  
     close(s);
     return 0;
 }// End main
 
 
+
+// This function initialises the MPU6050
+//
+void ACCEL_Init(void)
+{
+	
+}//END ACCEL_Init
+
+
+
+// This function reads accelaeration 
+//
+void ACCEL_Read(int *Accel)
+{
+	static int x;
+	
+	x++;
+	*Accel = x;
+}//END ACCEL_Read
+
+
+
 // This function sets the GIO on, off or to a PWM value
 // 1=on 0=off 0.nn=PWM
 //
-void GPIO_Set(int channel, float value)
+void PiBlast(int channel, float value)
 {
-	string s = channel + "=" + value + "\n";
-
+	char str[30];
 	
-	printf("%s\n",s);
+	sprintf(str,"%d=%1.1f\n",channel,value);
+	//string s = channel + "=" + value + "\n";	
+	//printf("%s\n",s);
 
-    write.Write(s);
-    write.Flush();
+	write(fp, Str);
+    //write.Write(str;
+    //write.Flush();
 }//END Set
 
-///@@@@@@@@@@@@@@@@@@@@@@@
-PWM
-namespace PrototypeAP
+
+
+// GPIOinit
+//
+void PiBlast_Init(void)
 {
-static class PWM
-{
+	if(fp = open("/dev/pi-blaster",O_WRITE) < 0) {
+		die("GPIO_Init: Error opening Pi-blaster FIFO");
+	}
+    //static fifoName[ = "/dev/pi-blaster";
 
-    static string fifoName = "/dev/pi-blaster";
+    //static FileStream file;
+    //static StreamWriter write;
 
-    static FileStream file;
-    static StreamWriter write;
-
-    static PWM()
-    {
-        file = new FileInfo(fifoName).OpenWrite();
-
-        write = new StreamWriter(file, Encoding.ASCII);
-    }
-
-   
-}
-}
-
-
-//@@@@@@@@@@@'SIG ALARM EXAMPLE
-
-
-int flag = T;
-
-
-
-int  main(void)
-{
-    signal(SIGALRM, sigalrm_handler);   
-    alarm(1);                         
-    while (1);  
-}
+    //static PWM()
+    //{
+    //    file = new FileInfo(fifoName).OpenWrite();
+    //    write = new StreamWriter(file, Encoding.ASCII);  
+//END GPIO_Init
 
 
 
@@ -182,7 +205,7 @@ int  main(void)
 void sigalrm_handler(int sig)
 {
     GPIO_Disable();
-    //alarm(1);
+    alarm(1);
 }//END sigalrm_handler
 
 
@@ -190,7 +213,31 @@ void sigalrm_handler(int sig)
 
 // GPIO_disable
 //
-void GPIO_disable(int sig)
+void GPIO_drive(int Fore,int Port,int Wdog)
+{
+	static int count;
+	float fport, ffore;
+	
+	count++;
+	if(count >= 10) {
+		PiBlast(GPIO_RED_LED,1);
+	} else if (count > 20) {
+		PiBlast(GPIO_RED_LED,0);
+		count = 0;
+	}
+	
+	fport = 1 * Port + 0;
+	ffore = 1 * Fore + 0;
+	PiBlast(GPIO_PORT,fport);
+	PiBlast(GPIO_FORE,ffore);
+
+}//END GPIO_drive
+
+
+
+// GPIO_disable
+//
+void GPIO_disable(void)
 {
 	PiBlast(GPIO_PORT,0);
 	PiBlast(GPIO_FORE,0);
