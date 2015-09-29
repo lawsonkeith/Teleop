@@ -24,12 +24,12 @@
  *  #firefox 192.168.1.6:8081
  *
  * 
- * The aim is to evaluate the use of XBOX tech for Sensabot
+ * The aim is to evaluate the use of XBOX tech for Teleop robotics
  * 
  * usage
  * -----
  * You must pass the joystick driver handles as well as the servers IP 
- * address.
+ * address. 
  * 
  * sudo ./teleop_client /dev/input/event3 /dev/input/js0 192.168.1.6
  *
@@ -72,7 +72,7 @@ void TimedTask (int sig);
 void SetupTimer(void);
 void Task_Init(void);
 void UDP_Init(char *ip_address);
-void UDP_Send(int Fore, int Port, int *Accel);
+void UDP_Send(int Fore, int Port, int Wdog, int *Accel);
 void die(char *s);
 
 // Main shared structures
@@ -90,8 +90,9 @@ struct TMsg {
 	int	Fore;
 	int	Port;
 	int	Accel;
+	int Wdog;
 	int spare[10];
-	char endmsg[10];
+	char endmsg[10];	
 }Msg;	
 	 
 	 
@@ -99,11 +100,11 @@ struct TMsg {
 //	
 void TimedTask(int sig)
 {
-	static int Accel;
+	static int Accel,Wdog;
 	int x;
 	
 	//printf("\n%d, %d",Fore,Port);
-	UDP_Send(Fore++, Port, &Accel);
+	UDP_Send(Fore, Port, Wdog++, &Accel);
 	
 	// 10Hz task
 	if(x % 2 == 0) {
@@ -152,13 +153,14 @@ int main(int argc, char** argv)
 
 // Send a UDP datagram to the server on the car.
 //
-void UDP_Send(int Fore, int Port, int *Accel)
+void UDP_Send(int Fore, int Port, int Wdog,  int *Accel)
 {
 	unsigned int  slen=sizeof(si_other);
 	char buf[BUFLEN];
   
 	Msg.Fore = Fore;
 	Msg.Port = Port;
+	Msg.Wdog = Wdog;
 	Msg.Port++;
 	
 	//send the message
@@ -234,8 +236,8 @@ void JS_Read(int *Fore, int *Port)
 	struct js_event js;
 	int axis[32];
 	char button[32];
-	char x;
-
+	char  x;
+	
 	//read
 	if (read(fd_j, &js, sizeof(struct js_event)) != sizeof(struct js_event)) {
 		die("\nJS_Read: Error reading gamepad, is it connected?");
