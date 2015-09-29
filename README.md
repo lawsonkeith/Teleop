@@ -98,3 +98,34 @@ sudo apt-get update
 sudo apt-get dist-upgrade
 sudo apt-get instal raspberrypi-ui-mods
 
+##Pi Blaster
+The PWM on the Pi is done with the Pi blaster Daemon.  In this the Pi receives commands over the FIFO.
+
+1. sudo apt-get install autoconf
+2. git clone https://github.com/sarfata/pi-blaster.git
+3. cd pi-blaster
+4. ./autogen.sh
+5. ./configure
+6. make
+7. sudo make install
+8. sudo make uninstall - to stop auto start
+
+FIFO is at /dev/pi-blaster
+
+  GPIO number   Pin in P1 header
+      4              P1-7
+      17             P1-11
+      18             P1-12
+      21             P1-13
+      22             P1-15
+      23             P1-16
+      24             P1-18
+      25             P1-22
+      
+To completely turn on GPIO pin 17:
+
+echo "17=1" > /dev/pi-blaster
+
+To set GPIO pin 17 to a PWM of 20%
+
+echo "17=0.2" > /dev/pi-blaster
