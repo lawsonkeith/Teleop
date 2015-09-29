@@ -112,20 +112,21 @@ The PWM on the Pi is done with the Pi blaster Daemon.  In this the Pi receives c
 
 FIFO is at /dev/pi-blaster
 
-  GPIO number   Pin in P1 header
-      4              P1-7
-      17             P1-11
-      18             P1-12
-      21             P1-13
-      22             P1-15
-      23             P1-16
-      24             P1-18
-      25             P1-22
+GPIO number| Pin in P1 header
+--- | ---
+4    |     P1-7
+17   |    P1-11
+18   |     P1-12
+21   |   P1-13
+22   |    P1-15
+23   |    P1-16
+24   |    P1-18
+25   |    P1-22
       
 To completely turn on GPIO pin 17:
 
-echo "17=1" > /dev/pi-blaster
+* echo "17=1" > /dev/pi-blaster
 
 To set GPIO pin 17 to a PWM of 20%
 
-echo "17=0.2" > /dev/pi-blaster
+* echo "17=0.2" > /dev/pi-blaster
