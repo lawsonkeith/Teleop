@@ -98,6 +98,19 @@ sudo apt-get update
 sudo apt-get dist-upgrade
 sudo apt-get instal raspberrypi-ui-mods
 
+##MPU6050
+http://www.instructables.com/id/Reading-I2C-Inputs-in-Raspberry-Pi-using-C/?ALLSTEPS
+
+1. Install i2c tools...
+2. sudo apt-get install libi2c-dev
+3. Edit the i2c On the pi's BIOS then reboot.
+4. sudo raspi-config
+5. sudo nano /etc/modules
+6. sudo nano /etc/modprobe.d/raspi-blacklist.conf 
+7. sudo i2cdetect -y 1
+8. The MPU605 should appear as 68
+
+
 ##Pi Blaster
 The PWM on the Pi is done with the Pi blaster Daemon.  In this the Pi receives commands over the FIFO.
 
