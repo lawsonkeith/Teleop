@@ -143,3 +143,10 @@ To completely turn on GPIO pin 17:
 To set GPIO pin 17 to a PWM of 20%
 
 * echo "17=0.2" > /dev/pi-blaster
+
+##wifi
+Follow adafruits guide to seting up the wifi using the terminal on the Pi.
+
+
+##Refs
+http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
