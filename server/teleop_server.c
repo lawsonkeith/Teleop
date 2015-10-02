@@ -40,6 +40,11 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <signal.h>
+#include <stdint.h>
+#include <unistd.h>
+#include "I2Cdev.h"
+#include "MPU6050.h"
+#include <fcntl.h>
 
 #define T 5 
 #define BUFLEN 512  //Max length of buffer
@@ -61,8 +66,8 @@ struct TMsg {
 	char endmsg[10];	
 }Msg;	
 
-void die(char *s);
-void main(void);
+void die(const char *s);
+int main(void);
 void sigalrm_handler(int);
 void GPIO_init(void);
 void GPIO_drive(int Fore,int Port,int Wdog);
@@ -72,7 +77,7 @@ void Accel_read(int *Accel);
 void PiBlast(int channel, float value);
 void PiBlast_init(void);
 int fp;
-
+MPU6050 accelgyro;
 
 // Main server program.  This is polled by the client so the client controls the 
 // update speed.
@@ -81,10 +86,15 @@ int main(void)
 {
     struct sockaddr_in si_me, si_other;
     int Accel;
-     
-    int s, i, slen = sizeof(si_other) , recv_len;
+    char dgram[512];
+    unsigned int slen =  sizeof(si_other);
+    int s, i, recv_len;
     char buf[BUFLEN];
-     
+
+	//Init I2C
+    printf("Invitializing I2C devices...\n");
+    accelgyro.initialize();
+
     //create a UDP socket
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
         die("socket");
@@ -105,8 +115,8 @@ int main(void)
     signal(SIGALRM, sigalrm_handler);   
     alarm(1);   
      
-    PiBlast_Init();
-    Accel_Init();
+    PiBlast_init();
+    Accel_init();
      
     //keep listening for data
     while(1)
@@ -115,11 +125,13 @@ int main(void)
         fflush(stdout);
          
         //try to receive some data, this is a blocking call @@@@@@ WAIT UDP @@@@@@@@
-        if ((recv_len = recvfrom(s, &Msg, sizeof(Msg), 0, (struct sockaddr *) &si_other, &slen)) == -1)         {
+        if ((recv_len = recvfrom(s, dgram /*(void *)Msg*/, sizeof(dgram), 0, (struct sockaddr *) &si_other, &slen)) == -1)  {
             die("recvfrom()");
         }
         
-        Accel_Read(&Accel);
+        memcpy(&Msg,dgram,sizeof(Msg));
+        
+        Accel_read(&Accel);
         GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
          
         //print details of the client/peer and the data received
@@ -143,7 +155,7 @@ int main(void)
 
 // This function initialises the MPU6050
 //
-void ACCEL_Init(void)
+void Accel_init(void)
 {
 	
 }//END ACCEL_Init
@@ -151,8 +163,8 @@ void ACCEL_Init(void)
 
 
 // This function reads accelaeration 
-//
-void ACCEL_Read(int *Accel)
+//a
+void Accel_read(int *Accel)
 {
 	static int x;
 	
@@ -173,7 +185,8 @@ void PiBlast(int channel, float value)
 	//string s = channel + "=" + value + "\n";	
 	//printf("%s\n",s);
 
-	write(fp, Str);
+	write(fp, str, sizeof(str) );
+
     //write.Write(str;
     //write.Flush();
 }//END Set
@@ -182,9 +195,12 @@ void PiBlast(int channel, float value)
 
 // GPIOinit
 //
-void PiBlast_Init(void)
+void PiBlast_init(void)
 {
-	if(fp = open("/dev/pi-blaster",O_WRITE) < 0) {
+	fp++;
+	
+	fp = open("/dev/pi-blaster",O_WRONLY);
+	if (fp < 1) {
 		die("GPIO_Init: Error opening Pi-blaster FIFO");
 	}
     //static fifoName[ = "/dev/pi-blaster";
@@ -196,7 +212,8 @@ void PiBlast_Init(void)
     //{
     //    file = new FileInfo(fifoName).OpenWrite();
     //    write = new StreamWriter(file, Encoding.ASCII);  
-//END GPIO_Init
+}//END PiBlast_init
+
 
 
 
@@ -204,7 +221,7 @@ void PiBlast_Init(void)
 //
 void sigalrm_handler(int sig)
 {
-    GPIO_Disable();
+    GPIO_disable();
     alarm(1);
 }//END sigalrm_handler
 
@@ -250,7 +267,7 @@ void GPIO_disable(void)
 
 // Does what it says...
 //   
-void die(char *s)
+void die(const char *s)
 {
     perror(s);
     exit(1);
