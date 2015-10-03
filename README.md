@@ -59,7 +59,7 @@ Install motion on the pi as follows:
 	
 Note - I could only get the remote viewing working on my linux laptop.
 	
-##Git cmds
+##Git/misc cmds
 Usefull cmds:
 
 1. git clone https://github.com/lawsonkeith/Teleop.git
@@ -67,6 +67,7 @@ Usefull cmds:
 3. git commit -am "comment"
 4. git pull origin master
 5. scp teleop_server.c pi@192.168.1.8:/home/pi/Teleop/server
+6. make | head
 
 ##UDP tests
 send data to a client (Pi) interactively:
