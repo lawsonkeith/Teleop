@@ -76,6 +76,7 @@ void Accel_init(void);
 void Accel_read(int *Accel);
 void PiBlast(int channel, float value);
 void PiBlast_init(void);
+void I2C_init(void);
 int fp;
 MPU6050 accelgyro;
 
@@ -90,10 +91,6 @@ int main(void)
     unsigned int slen =  sizeof(si_other);
     int s, i, recv_len;
     char buf[BUFLEN];
-
-	//Init I2C
-    printf("Invitializing I2C devices...\n");
-    accelgyro.initialize();
 
     //create a UDP socket
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
@@ -117,7 +114,9 @@ int main(void)
      
     PiBlast_init();
     Accel_init();
-     
+
+    GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
+    
     //keep listening for data
     while(1)
     {
@@ -154,22 +153,61 @@ int main(void)
 
 
 // This function initialises the MPU6050
-//
+// 655 = me shaking violently
 void Accel_init(void)
 {
+    printf("Invitializing I2C devices...\n");
+    accelgyro.initialize();
 	
 }//END ACCEL_Init
 
 
-
-// This function reads accelaeration 
-//a
+	
+    
+// This function reads acceleration form the MPU 6050 and returns impacts
+// 255-1000;
 void Accel_read(int *Accel)
 {
+	int16_t ax, ay, az;
+	int16_t gx, gy, gz;
 	static int x;
 	
-	x++;
-	*Accel = x;
+	static int lax, lay, laz;	
+	int s1,s2,s3,max;
+	
+    // read raw accel/gyro measurements from device
+    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+    // display accel/gyro x/y/z values
+	s1= abs(ax-lax) / 100;
+	s2 = abs(ay-lay) / 100;
+	s3 = abs(az-laz) / 100 ;
+
+	//get maxval
+	if((s1 > s2) && (s1 > s3))	
+		max = s1;
+	else if((s2 > s1) && (s1 > s3))	
+		max = s2;
+	else
+		max =s3;
+
+	//fflush(stdout);		
+	//if(max > 254)
+	//	printf("\n%d",max);
+	
+	//update last vals
+	laz = az;
+	lay = ay;
+	lax = ax;
+	
+	// just register sudden jolts
+	if(max > 1000)
+		*Accel = 1000;
+	else if (max < 255)
+		*Accel =0;
+	else
+		*Accel = max;
+	
 }//END ACCEL_Read
 
 
