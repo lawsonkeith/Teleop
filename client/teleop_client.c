@@ -226,7 +226,7 @@ void Task_Init(void)
 
 
 // JS_Read  Left axis is throttle, right axis is steering
-// [1] -32K  = max fore 	[3] -32K = max port
+// [1] -1K  = max fore 	[3] -1K = max port
 //
 void JS_Read(int *Fore, int *Port)
 {
@@ -255,8 +255,11 @@ void JS_Read(int *Fore, int *Port)
 
 	//read off the 2 vals we are interested in
 	if (axes) {
-		*Fore = axis[1];
-		*Port = axis[3];
+		*Fore = axis[1] / 32.768;
+		*Port = axis[3] / 32.768;
+		
+		LimitIntMag(Fore,1000);
+		LimitIntMag(Port,1000);
 	}
 
 	if (buttons) {
@@ -320,17 +323,19 @@ void FF_Init(char *device_file_name)
 
 
 
-// Set force feedback to rumble joypad foe 0-0xFFFF magnitude.
+// Set force feedback to rumble joypad to 0-1000 magnitude.
 // we need to bu root to do this.
 //
 void FF_Rumble(unsigned int magnitude)
 {
+	LimitIntMag(&magnitude,1000);
+	
 	/* download a periodic sinusoidal effect */
 	effects.type = FF_PERIODIC;
 	effects.id = -1;
 	effects.u.periodic.waveform = FF_SINE;
 	effects.u.periodic.period = 0.1*0x100;	/* 0.1 second */
-	effects.u.periodic.magnitude = magnitude;	/* 0.5 * Maximum magnitude */
+	effects.u.periodic.magnitude = magnitude * 32;	/* 0.5 * Maximum magnitude */
 	effects.u.periodic.offset = 0;
 	effects.u.periodic.phase = 0;
 	effects.direction = 0x4000;	/* Along X axis */
@@ -366,6 +371,21 @@ void die(char *s)
     exit(1);
     
 }//END die
+
+
+// Limit int Mag
+// limit n to +/- lim
+void LimitIntMag(int *n,int lim)
+{
+	if(*n > lim)
+		*n = lim;
+	
+	if(*n < (lim * -1))
+		*n = (lim * -1);
+		
+}//END LimitIntMag
+
+
 
 //printf("\n\n\nsjfjshdfjskhdf hjshdjf hsdf >> %s",Msg.endmsg);
 	//printf("sfhsdghsf\n\n");

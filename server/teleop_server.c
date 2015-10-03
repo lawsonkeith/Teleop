@@ -77,6 +77,8 @@ void Accel_read(int *Accel);
 void PiBlast(int channel, float value);
 void PiBlast_init(void);
 void I2C_init(void);
+void LimitInt(int *n,int lo,int hi);
+void LimitIntMag(int *n,int lim);
 int fp;
 MPU6050 accelgyro;
 
@@ -115,7 +117,8 @@ int main(void)
     PiBlast_init();
     Accel_init();
 
-    GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
+	PiBlast(17,0.5);
+    //GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
     
     //keep listening for data
     while(1)
@@ -130,7 +133,7 @@ int main(void)
         
         memcpy(&Msg,dgram,sizeof(Msg));
         
-        Accel_read(&Accel);
+        Accel_read(&Msg.Accel);
         GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
          
         //print details of the client/peer and the data received
@@ -200,13 +203,8 @@ void Accel_read(int *Accel)
 	lay = ay;
 	lax = ax;
 	
-	// just register sudden jolts
-	if(max > 1000)
-		*Accel = 1000;
-	else if (max < 255)
-		*Accel =0;
-	else
-		*Accel = max;
+	// > 255 would be a servere jolt
+	LimitInt(Accel,0,1000);
 	
 }//END ACCEL_Read
 
@@ -225,31 +223,19 @@ void PiBlast(int channel, float value)
 
 	write(fp, str, sizeof(str) );
 
-    //write.Write(str;
-    //write.Flush();
-}//END Set
+}//END PiBlast
 
 
 
 // GPIOinit
 //
 void PiBlast_init(void)
-{
-	fp++;
-	
+{	
 	fp = open("/dev/pi-blaster",O_WRONLY);
 	if (fp < 1) {
 		die("GPIO_Init: Error opening Pi-blaster FIFO");
 	}
-    //static fifoName[ = "/dev/pi-blaster";
-
-    //static FileStream file;
-    //static StreamWriter write;
-
-    //static PWM()
-    //{
-    //    file = new FileInfo(fifoName).OpenWrite();
-    //    write = new StreamWriter(file, Encoding.ASCII);  
+    
 }//END PiBlast_init
 
 
@@ -266,13 +252,39 @@ void sigalrm_handler(int sig)
 
 
 
-// GPIO_disable
+// GPIO_drive, actually drive the car.
 //
 void GPIO_drive(int Fore,int Port,int Wdog)
 {
-	static int count;
+	static int LastWdog,count;
 	float fport, ffore;
 	
+	LimitIntMag(&Fore,1000);
+	LimitIntMag(&Port,1000);
+	
+	//from picar...
+	//piblaster.setPwm(17,0.105); //throttle rev  1000 
+	//piblaster.setPwm(17,0.14); //throttle n
+	//piblaster.setPwm(17,0.175); //throttle fwds -1000
+	//-0.000035 * x + .14
+	ffore = -0.000035 * Fore + .14;
+	
+	//18 BLACK TAPE
+	//piblaster.setPwm(18,.105); // steer l -1000
+	//piblaster.setPwm(18,.14); // steer mid
+	//piblaster.setPwm(18,.175); // steer r 1000
+	// 0.000035 * x + .14
+	fport = 0.000035 * Port + .14;
+	
+	//client -=fore -=port  +/- 1000 Mag
+	//
+	if(Wdog == LastWdog) {
+		printf("\nGPIO_drive: Error watchdog");
+		fport = .14;
+		ffore = .14;
+	}
+	
+	//flash
 	count++;
 	if(count >= 10) {
 		PiBlast(GPIO_RED_LED,1);
@@ -281,11 +293,10 @@ void GPIO_drive(int Fore,int Port,int Wdog)
 		count = 0;
 	}
 	
-	fport = 1 * Port + 0;
-	ffore = 1 * Fore + 0;
 	PiBlast(GPIO_PORT,fport);
 	PiBlast(GPIO_FORE,ffore);
-
+	
+	LastWdog = Wdog;
 }//END GPIO_drive
 
 
@@ -294,8 +305,8 @@ void GPIO_drive(int Fore,int Port,int Wdog)
 //
 void GPIO_disable(void)
 {
-	PiBlast(GPIO_PORT,0);
-	PiBlast(GPIO_FORE,0);
+	PiBlast(GPIO_PORT,0.14);
+	PiBlast(GPIO_FORE,0.14);
 	PiBlast(GPIO_RED_LED,0);
 	PiBlast(GPIO_GN_LED,1);
 
@@ -311,3 +322,27 @@ void die(const char *s)
     exit(1);
     
 }//END die
+
+// Limit int Mag
+// limit n to +/- lim
+void LimitIntMag(int *n,int lim)
+{
+	if(*n > lim)
+		*n = lim;
+	
+	if(*n < (lim * -1))
+		*n = (lim * -1);
+		
+}//END LimitIntMag
+
+// Limit int 
+// limit n to lo & hi
+void LimitInt(int *n,int lo,int hi)
+{
+	if(*n > hi)
+		*n = hi;
+	
+	if(*n < lo)
+		*n = lo;
+		
+}//END LimitInt
