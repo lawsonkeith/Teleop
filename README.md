@@ -66,7 +66,7 @@ Usefull cmds:
 2. git push origin master
 3. git commit -am "comment"
 4. git pull origin master
-
+5. scp teleop_server.c pi@192.168.1.8:/home/pi/Teleop/server
 
 ##UDP tests
 send data to a client (Pi) interactively:
@@ -143,3 +143,12 @@ To completely turn on GPIO pin 17:
 To set GPIO pin 17 to a PWM of 20%
 
 * echo "17=0.2" > /dev/pi-blaster
+
+##wifi
+Follow adafruits guide to seting up the wifi using the terminal on the Pi.
+
+1. sudo apt-get install avahi-daemon
+
+
+##Refs
+http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
