@@ -89,10 +89,12 @@ int main(void)
 {
     struct sockaddr_in si_me, si_other;
     int Accel;
-    char dgram[512];
     unsigned int slen =  sizeof(si_other);
     int s, i, recv_len;
     char buf[BUFLEN];
+
+	if(sizeof(buf) < sizeof(Msg))
+		die("main: Fatal build error");
 
     //create a UDP socket
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
@@ -127,18 +129,20 @@ int main(void)
         fflush(stdout);
          
         //try to receive some data, this is a blocking call @@@@@@ WAIT UDP @@@@@@@@
-        if ((recv_len = recvfrom(s, dgram /*(void *)Msg*/, sizeof(dgram), 0, (struct sockaddr *) &si_other, &slen)) == -1)  {
+        if ((recv_len = recvfrom(s, buf /*(void *)Msg*/, sizeof(buf), 0, (struct sockaddr *) &si_other, &slen)) == -1)  {
             die("recvfrom()");
         }
         
-        memcpy(&Msg,dgram,sizeof(Msg));
+        memcpy(&Msg,buf,sizeof(Msg));
         
         Accel_read(&Msg.Accel);
         GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
          
         //print details of the client/peer and the data received
-        printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+        printf("Received packet %x from %s:%d - A%d\n",Msg.Wdog, inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port),Msg.Accel);
         printf("Data: %s\n" , buf);
+        
+        memcpy(buf,&Msg,sizeof(Msg));
          
         //now reply the client with the same data
         if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1) {
@@ -176,7 +180,7 @@ void Accel_read(int *Accel)
 	static int x;
 	
 	static int lax, lay, laz;	
-	int s1,s2,s3,max;
+	int s1,s2,s3;
 	
     // read raw accel/gyro measurements from device
     accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
@@ -188,11 +192,11 @@ void Accel_read(int *Accel)
 
 	//get maxval
 	if((s1 > s2) && (s1 > s3))	
-		max = s1;
+		*Accel = s1;
 	else if((s2 > s1) && (s1 > s3))	
-		max = s2;
+		*Accel = s2;
 	else
-		max =s3;
+		*Accel =s3;
 
 	//fflush(stdout);		
 	//if(max > 254)
@@ -245,6 +249,7 @@ void PiBlast_init(void)
 //
 void sigalrm_handler(int sig)
 {
+	printf("\nsigalrm_handler: ALARM!");
     GPIO_disable();
     alarm(1);
 }//END sigalrm_handler
@@ -305,6 +310,8 @@ void GPIO_drive(int Fore,int Port,int Wdog)
 //
 void GPIO_disable(void)
 {
+	printf("\nGPIO_disable: DISABLE!");
+ 
 	PiBlast(GPIO_PORT,0.14);
 	PiBlast(GPIO_FORE,0.14);
 	PiBlast(GPIO_RED_LED,0);

@@ -74,6 +74,7 @@ void Task_Init(void);
 void UDP_Init(char *ip_address);
 void UDP_Send(int Fore, int Port, int Wdog, int *Accel);
 void die(char *s);
+void LimitIntMag(int *n,int lim);
 
 // Main shared structures
 struct ff_effect effects;	
@@ -95,25 +96,7 @@ struct TMsg {
 	char endmsg[10];	
 }Msg;	
 	 
-	 
-// 20Hz timed task.  Put UDP Comms in here
-//	
-void TimedTask(int sig)
-{
-	static int Accel,Wdog;
-	int x;
-	
-	//printf("\n%d, %d",Fore,Port);
-	UDP_Send(Fore, Port, Wdog++, &Accel);
-	
-	// 10Hz task
-	if(x % 2 == 0) {
-		//FF_Rumble(Accel);
-		;
-	}
-	
-	signal (sig, TimedTask);
-}//END Periodic
+
 
 	
 // Main control program for Teleop program. 
@@ -123,7 +106,8 @@ int main(int argc, char** argv)
 	char event_file_name[64];
 	char joy_file_name[64];
 	char ip_address[64];
-	//int x;
+	static int Accel,Wdog;
+	
 	
 
 	/* Read args */
@@ -137,14 +121,20 @@ int main(int argc, char** argv)
 	strncpy(ip_address, argv[3], 64);
 	
 	// Init timer task and joystick and UDP stack
-	Task_Init();
+	//Task_Init();
 	FF_Init(event_file_name);
 	JS_Init(joy_file_name);
 	UDP_Init(ip_address);
 
+
 	// hand over to timed task
 	while(1) {
+		usleep(5000); //50Hz
+		
 		JS_Read(&Fore,&Port);
+		UDP_Send(Fore, Port, Wdog++, &Accel);
+	
+		printf("\n%d,%d,%X,%X",Fore,Port,Accel,Wdog);
 	}
 		
 	sleep(2);
@@ -161,8 +151,7 @@ void UDP_Send(int Fore, int Port, int Wdog,  int *Accel)
 	Msg.Fore = Fore;
 	Msg.Port = Port;
 	Msg.Wdog = Wdog;
-	Msg.Port++;
-	
+		
 	//send the message
 	if (sendto(sock, &Msg, sizeof(Msg) , 0 , (struct sockaddr *) &si_other, slen)==-1) 	{
 		die("sendto()");
@@ -171,12 +160,10 @@ void UDP_Send(int Fore, int Port, int Wdog,  int *Accel)
 	//receive a reply and print it
 	//clear the buffer by filling null, it might have previously received data
 	memset(buf,'\0', BUFLEN);
-	//try to receive some data, this is a blocking call
-	if (recvfrom(sock, &Msg, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == -1){
-		die("recvfrom()");
+	//try to receive some data, this is a NON! blocking call
+	if(recvfrom(sock, &Msg, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == sizeof(Msg)) 	{
+		*Accel = Msg.Accel;
 	}
-	
-	*Accel = Msg.Accel;
      
 }//END UDP_Send	
 
@@ -186,9 +173,16 @@ void UDP_Send(int Fore, int Port, int Wdog,  int *Accel)
 //
 void UDP_Init(char *ip_address)
 {   
+	int flags = fcntl(sock, F_GETFL);
+	
+	//open socket	
     if ( (sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
         die("UDP_Init: socket");
     }
+    
+    // set rcvfrom to nonblocking else this program hangs
+	flags |= O_NONBLOCK;
+	fcntl(sock, F_SETFL, flags);
  
     memset((char *) &si_other, 0, sizeof(si_other));
     si_other.sin_family = AF_INET;
@@ -232,39 +226,40 @@ void JS_Read(int *Fore, int *Port)
 {
 	unsigned char axes = 6;
 	unsigned char buttons = 4;
-
 	struct js_event js;
-	int axis[32];
-	char button[32];
+	static int axis[100];
+	static char button[100];
 	char  x;
 	
 	//read
 	if (read(fd_j, &js, sizeof(struct js_event)) != sizeof(struct js_event)) {
-		die("\nJS_Read: Error reading gamepad, is it connected?");
+		;//NO DATA
 	}
+	else{
 
-	//btn or axes msg?
-	switch(js.type & ~JS_EVENT_INIT) {
-	case JS_EVENT_BUTTON:
-		button[js.number] = js.value;
-		break;
-	case JS_EVENT_AXIS:
-		axis[js.number] = js.value;
-		break;
-	}
+		//btn or axes msg?
+		switch(js.type & ~JS_EVENT_INIT) {
+		case JS_EVENT_BUTTON:
+			button[js.number] = js.value;
+			break;
+		case JS_EVENT_AXIS:
+			axis[js.number] = js.value;
+			break;
+		}
 
-	//read off the 2 vals we are interested in
-	if (axes) {
-		*Fore = axis[1] / 32.768;
-		*Port = axis[3] / 32.768;
-		
-		LimitIntMag(Fore,1000);
-		LimitIntMag(Port,1000);
-	}
+		//read off the 2 vals we are interested in
+		if (axes) {
+			*Fore = axis[1] / 32.768;
+			*Port = axis[3] / 32.768;
+			
+			LimitIntMag(Fore,1000);
+			LimitIntMag(Port,1000);
+		}
 
-	if (buttons) {
-		x = button[0];
-	}
+		if (buttons) {
+			x = button[0];
+		}
+	}//END IF DATA
 }//END JS_Read
 
 
@@ -282,6 +277,10 @@ void JS_Init(char *joy_file_name)
 		die("JS_Init: Error opening gamepad, is it connected?");
 	}
 	
+	//Set to nonblocking file IO
+	fcntl(fd_j, F_SETFL,fcntl(fd_j, F_GETFL) |O_NONBLOCK);
+	
+	//Read joystick information
 	ioctl(fd_j, JSIOCGVERSION, &version);
 	ioctl(fd_j, JSIOCGAXES, &axes);
 	ioctl(fd_j, JSIOCGBUTTONS, &buttons);
@@ -386,6 +385,37 @@ void LimitIntMag(int *n,int lim)
 }//END LimitIntMag
 
 
+
+
+
+// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
+
+// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
+
+// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
+
+// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
+
+
+
+
+	 
+// 20Hz timed task.  Put UDP Comms in here
+//	
+void TimedTask(int sig)
+{
+	int x;
+	
+	//printf("\n%d, %d",Fore,Port);
+	
+	// 10Hz task
+	if(x % 2 == 0) {
+		//FF_Rumble(Accel);
+		;
+	}
+	
+	signal (sig, TimedTask);
+}//END Periodic
 
 //printf("\n\n\nsjfjshdfjskhdf hjshdjf hsdf >> %s",Msg.endmsg);
 	//printf("sfhsdghsf\n\n");
