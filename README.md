@@ -153,3 +153,4 @@ Follow adafruits guide to seting up the wifi using the terminal on the Pi.
 
 ##Refs
 http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
+http://gnosis.cx/publish/programming/sockets2.html
