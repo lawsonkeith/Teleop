@@ -81,6 +81,7 @@ void LimitInt(int *n,int lo,int hi);
 void LimitIntMag(int *n,int lim);
 int fp;
 MPU6050 accelgyro;
+char AlarmMsgEn = 1;
 
 // Main server program.  This is polled by the client so the client controls the 
 // update speed.
@@ -94,11 +95,11 @@ int main(void)
     char buf[BUFLEN];
 
 	if(sizeof(buf) < sizeof(Msg))
-		die("main: Fatal build error");
+		die("\nmain: Fatal build error");
 
     //create a UDP socket
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-        die("socket");
+        die("\nsocket()");
     }
      
     // zero out the structure
@@ -110,37 +111,35 @@ int main(void)
      
     //bind socket to port
     if( bind(s , (struct sockaddr*)&si_me, sizeof(si_me) ) == -1){
-        die("bind");
+        die("bind()");
     }
     //Start alarm
     signal(SIGALRM, sigalrm_handler);   
     alarm(1);   
      
     PiBlast_init();
+    GPIO_disable();
     Accel_init();
-
-	PiBlast(17,0.5);
-    //GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
     
     //keep listening for data
     while(1)
     {
-        printf("Waiting for data...");
+        //printf("Waiting for data...");
         fflush(stdout);
          
         //try to receive some data, this is a blocking call @@@@@@ WAIT UDP @@@@@@@@
         if ((recv_len = recvfrom(s, buf /*(void *)Msg*/, sizeof(buf), 0, (struct sockaddr *) &si_other, &slen)) == -1)  {
             die("recvfrom()");
         }
-        
+        AlarmMsgEn = 1;
         memcpy(&Msg,buf,sizeof(Msg));
         
         Accel_read(&Msg.Accel);
         GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
          
         //print details of the client/peer and the data received
-        printf("Received packet %x from %s:%d - A%d\n",Msg.Wdog, inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port),Msg.Accel);
-        printf("Data: %s\n" , buf);
+        printf("\nReceived packet %x from %s:%d - A%d",Msg.Wdog, inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port),Msg.Accel);
+        //printf("Data: %s\n" , buf);
         
         memcpy(buf,&Msg,sizeof(Msg));
          
@@ -163,7 +162,7 @@ int main(void)
 // 655 = me shaking violently
 void Accel_init(void)
 {
-    printf("Invitializing I2C devices...\n");
+    printf("\nInvitializing I2C devices...");
     accelgyro.initialize();
 	
 }//END ACCEL_Init
@@ -237,7 +236,7 @@ void PiBlast_init(void)
 {	
 	fp = open("/dev/pi-blaster",O_WRONLY);
 	if (fp < 1) {
-		die("GPIO_Init: Error opening Pi-blaster FIFO");
+		die("\nGPIO_Init: Error opening Pi-blaster FIFO");
 	}
     
 }//END PiBlast_init
@@ -249,7 +248,7 @@ void PiBlast_init(void)
 //
 void sigalrm_handler(int sig)
 {
-	printf("\nsigalrm_handler: ALARM!");
+	//printf("\nsigalrm_handler: ALARM!");
     GPIO_disable();
     alarm(1);
 }//END sigalrm_handler
@@ -310,8 +309,12 @@ void GPIO_drive(int Fore,int Port,int Wdog)
 //
 void GPIO_disable(void)
 {
-	printf("\nGPIO_disable: DISABLE!");
- 
+	if(AlarmMsgEn) {
+		printf("\nGPIO_disable: DISABLE!");
+		fflush(stdout);
+	}
+	
+	AlarmMsgEn = 0;
 	PiBlast(GPIO_PORT,0.14);
 	PiBlast(GPIO_FORE,0.14);
 	PiBlast(GPIO_RED_LED,0);

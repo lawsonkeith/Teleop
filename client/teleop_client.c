@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 	char event_file_name[64];
 	char joy_file_name[64];
 	char ip_address[64];
-	static int Accel,Wdog;
+	static int Accel,Wdog,Count;
 	
 	
 
@@ -133,9 +133,18 @@ int main(int argc, char** argv)
 		
 		JS_Read(&Fore,&Port);
 		UDP_Send(Fore, Port, Wdog++, &Accel);
-	
+		
 		printf("\n%d,%d,%X,%X",Fore,Port,Accel,Wdog);
-	}
+		if(Count>0)
+			Count--;
+		
+		if(Accel > 200) {
+			if(Count ==0) {
+				Count = 100;
+				FF_Rumble(Accel);
+			}
+		}
+	}//loop
 		
 	sleep(2);
 }//END main
