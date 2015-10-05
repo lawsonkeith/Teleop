@@ -66,8 +66,9 @@ Usefull cmds:
 2. git push origin master
 3. git commit -am "comment"
 4. git pull origin master
-5. scp teleop_server.c pi@192.168.1.8:/home/pi/Teleop/server
+5. scp teleop_server.c pi@192.168.1.8:/home/pi/Teleop/server (copy to pi)
 6. make | head
+7. git reset --hard origin/master (force local to repo ver)
 
 ##UDP tests
 send data to a client (Pi) interactively:
@@ -91,6 +92,7 @@ Some usefull nano cmds...
 ##references
 Usfull notes etc.
 Linux timers - 2net.co.uk: periodic tasks in linux
+IMU pulled from PiBits repo.
 
 ##Pi Cmds
 General housekeeping..
@@ -154,3 +156,4 @@ Follow adafruits guide to seting up the wifi using the terminal on the Pi.
 ##Refs
 http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
 http://gnosis.cx/publish/programming/sockets2.html
+http://www.2net.co.uk/tutorial/periodic_threads

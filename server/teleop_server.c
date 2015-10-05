@@ -121,11 +121,14 @@ int main(void)
     GPIO_disable();
     Accel_init();
     
+    //PiBlast(17,0.15);
+    //usleep(1000000);
+    
     //keep listening for data
     while(1)
     {
         //printf("Waiting for data...");
-        fflush(stdout);
+        //fflush(stdout);
          
         //try to receive some data, this is a blocking call @@@@@@ WAIT UDP @@@@@@@@
         if ((recv_len = recvfrom(s, buf /*(void *)Msg*/, sizeof(buf), 0, (struct sockaddr *) &si_other, &slen)) == -1)  {
@@ -138,7 +141,7 @@ int main(void)
         GPIO_drive(Msg.Fore,Msg.Port,Msg.Wdog);
          
         //print details of the client/peer and the data received
-        printf("\nReceived packet %x from %s:%d - A%d",Msg.Wdog, inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port),Msg.Accel);
+        //printf("\nReceived packet %x from %s:%d - A%d",Msg.Wdog, inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port),Msg.Accel);
         //printf("Data: %s\n" , buf);
         
         memcpy(buf,&Msg,sizeof(Msg));
@@ -220,11 +223,11 @@ void PiBlast(int channel, float value)
 {
 	char str[30];
 	
-	sprintf(str,"%d=%1.1f\n",channel,value);
+	sprintf(str,"%d=%1.2f\n",channel,value);
 	//string s = channel + "=" + value + "\n";	
-	//printf("%s\n",s);
+	//printf("%s\n",str);
 
-	write(fp, str, sizeof(str) );
+	write(fp, str, strlen(str) );
 
 }//END PiBlast
 
@@ -289,14 +292,15 @@ void GPIO_drive(int Fore,int Port,int Wdog)
 	}
 	
 	//flash
-	count++;
+	/*count++;
 	if(count >= 10) {
 		PiBlast(GPIO_RED_LED,1);
 	} else if (count > 20) {
 		PiBlast(GPIO_RED_LED,0);
 		count = 0;
-	}
+	}*/
 	
+	//printf("\n%f, %f",fport, ffore);
 	PiBlast(GPIO_PORT,fport);
 	PiBlast(GPIO_FORE,ffore);
 	

@@ -68,7 +68,6 @@ void FF_Rumble(unsigned int magnitude);
 void JS_Read(int *Fore, int *Port);
 void FF_Init(char *device_file_name);
 void JS_Init(char *joy_file_name);
-void TimedTask (int sig);
 void SetupTimer(void);
 void Task_Init(void);
 void UDP_Init(char *ip_address);
@@ -108,8 +107,6 @@ int main(int argc, char** argv)
 	char ip_address[64];
 	static int Accel,Wdog,Count;
 	
-	
-
 	/* Read args */
 	if(argc != 4){
 		printf("usage: teleop_client [event] [joystick] [server_IP]\n");
@@ -121,7 +118,6 @@ int main(int argc, char** argv)
 	strncpy(ip_address, argv[3], 64);
 	
 	// Init timer task and joystick and UDP stack
-	//Task_Init();
 	FF_Init(event_file_name);
 	JS_Init(joy_file_name);
 	UDP_Init(ip_address);
@@ -129,7 +125,7 @@ int main(int argc, char** argv)
 
 	// hand over to timed task
 	while(1) {
-		usleep(5000); //50Hz
+		usleep(10000); //10Hz
 		
 		JS_Read(&Fore,&Port);
 		UDP_Send(Fore, Port, Wdog++, &Accel);
@@ -138,9 +134,10 @@ int main(int argc, char** argv)
 		if(Count>0)
 			Count--;
 		
-		if(Accel > 200) {
+		// Haptic feedback
+		if(Accel > 280) {
 			if(Count ==0) {
-				Count = 100;
+				Count = 3;
 				FF_Rumble(Accel);
 			}
 		}
@@ -150,7 +147,9 @@ int main(int argc, char** argv)
 }//END main
 
 
-// Send a UDP datagram to the server on the car.
+
+// Send a UDP datagram to the server on the car.  This is done non blocking now so the 
+// failed packets don't make the whole process hang
 //
 void UDP_Send(int Fore, int Port, int Wdog,  int *Accel)
 {
@@ -332,40 +331,46 @@ void FF_Init(char *device_file_name)
 
 
 // Set force feedback to rumble joypad to 0-1000 magnitude.
-// we need to bu root to do this.
-//
+// we need to bu root to do this. Note - see fftest.c for the code behind this.
+// 
 void FF_Rumble(unsigned int magnitude)
 {
-	LimitIntMag(&magnitude,1000);
+	static int init = 1;
 	
-	/* download a periodic sinusoidal effect */
-	effects.type = FF_PERIODIC;
-	effects.id = -1;
-	effects.u.periodic.waveform = FF_SINE;
-	effects.u.periodic.period = 0.1*0x100;	/* 0.1 second */
-	effects.u.periodic.magnitude = magnitude * 32;	/* 0.5 * Maximum magnitude */
-	effects.u.periodic.offset = 0;
-	effects.u.periodic.phase = 0;
-	effects.direction = 0x4000;	/* Along X axis */
-	effects.u.periodic.envelope.attack_length = 0x100;
-	effects.u.periodic.envelope.attack_level = 0;
-	effects.u.periodic.envelope.fade_length = 0x100;
-	effects.u.periodic.envelope.fade_level = 0;
-	effects.trigger.button = 0;
-	effects.trigger.interval = 0;
-	effects.replay.length = 2000;  /* 2 seconds */
-	effects.replay.delay = 0;
+	if(init = 1) {
+		init = 0;
+		
+		/* download a periodic sinusoidal effect & store for futuer playback */
+		effects.type = FF_PERIODIC;
+		effects.id = -1;
+		effects.u.periodic.waveform = FF_SINE;
+		effects.u.periodic.period = 0.1*0x100;	/* 0.1 second */
+		effects.u.periodic.magnitude = magnitude * 32;	/* 0.5 * Maximum magnitude */
+		effects.u.periodic.offset = 0;
+		effects.u.periodic.phase = 0;
+		effects.direction = 0x4000;	/* Along X axis */
+		effects.u.periodic.envelope.attack_length = 0x100;
+		effects.u.periodic.envelope.attack_level = 0;
+		effects.u.periodic.envelope.fade_length = 0x100;
+		effects.u.periodic.envelope.fade_level = 0;
+		effects.trigger.button = 0;
+		effects.trigger.interval = 0;
+		effects.replay.length = 500;  /* .5 seconds */
+		effects.replay.delay = 0;
 
-	if (ioctl(fd_e, EVIOCSFF, &effects) < 0) {
-		die("Upload effects[0]");
-	}
+		if (ioctl(fd_e, EVIOCSFF, &effects) < 0) {
+			die("Upload effects[0]");
+		}
+	}//END init 
+	
+	LimitIntMag(&magnitude,1000);
 	
 	play.type = EV_FF;
 	play.code = effects.id;
 	play.value = 1;
 
 	if (write(fd_e, (const void*) &play, sizeof(play)) == -1) {
-		die("Play effect");
+		perror("\nFF_Rumble(): Play effect");
 	}
 }//END FF_Rumble
    
@@ -393,39 +398,3 @@ void LimitIntMag(int *n,int lim)
 		
 }//END LimitIntMag
 
-
-
-
-
-// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
-
-// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
-
-// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
-
-// @@@@@@@@@@@@@@@@ DUSTBIN v@@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN @@@@ DUSTBIN 
-
-
-
-
-	 
-// 20Hz timed task.  Put UDP Comms in here
-//	
-void TimedTask(int sig)
-{
-	int x;
-	
-	//printf("\n%d, %d",Fore,Port);
-	
-	// 10Hz task
-	if(x % 2 == 0) {
-		//FF_Rumble(Accel);
-		;
-	}
-	
-	signal (sig, TimedTask);
-}//END Periodic
-
-//printf("\n\n\nsjfjshdfjskhdf hjshdjf hsdf >> %s",Msg.endmsg);
-	//printf("sfhsdghsf\n\n");
-	//fflush(stdout);
