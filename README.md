@@ -1,5 +1,5 @@
 # Teleop introduction
-RC car teleop system with haptic feedback using C on a raspberry Pi.
+RC car teleop system with haptic feedback using C on a raspberry Pi.  This uses much hardware from the XBOX 360 to create a very budget teleop system.
 
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0019.JPG)
 
@@ -13,11 +13,11 @@ There are 4 software modules:
 There are 6 hardware modules:
 
 1. XBOX 360 gamepad		- Laptop	
-2. Wireless xbox receiver	- Laptop
+2. Wireless XBOX receiver	- Laptop
 3. MPU6050 IMU			- Pi
 4. Wifi dongle 1000mw		- Pi	
 5. DCDC Converter		- Pi
-6. Webcam			- Pi
+6. XBOX Webcam			- Pi
 
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/Schematic.png)
 
@@ -57,6 +57,9 @@ Functionally there is a remote RC car and a laptop operator control unit (Laptop
 2. Currently the settings are passed by argument, this is a bit of a mess and should move over to ini files.
 3. Error checking is limited.
 4. Resolution of the video stream has to be really low to get low latency.
+5. I didn't implement the LEDs on the schematic.
+6. I used a smaller dongle type USB which had limited range with my TALK TALK router.
+7. Because the coding for the mjpeg takes place on the pi the image res is limited, perhaps a better camera would help here i.e. PI-camera.
 
 
 
@@ -67,14 +70,14 @@ Acquire the windows XBOX wireless driver and install the drivers.  There's a tut
 The LED on the controller will indicate when it's paired.  The drivers should already be on linux if it's a recent release, I used Xubuntu 15.  Use the following commands to look for or test the XBOX controller.
 
 1. use cat /proc/bus/input/devices, look at 'Handlers' if unsure!
-2. fftest /dev/input/event3
-3. jstest /dev/input/js0
-4. ls /dev/input
-5. I didn't have to install anything in linux, all the pain was in windows.
+2. fftest /dev/input/event3, this tests force feedback.
+3. jstest /dev/input/js0, this test analogs.
+4. ls /dev/input, you should see the joystick FIFOs here.
+5. I didn't have to install anything in linux (apart from maybe jstest), all the pain was in windows.
  
 
 ##Installing video streaming on the pi
-To do this it's best to run a lower res to get a faster update, I run at <320x240 and zoom in on the web page.
+To do this it's best to run a lower res to get a faster update, I run at <320x240 and zoom in on the web page.  On higher res it was un-usable.
 
 1. Make sure you have an updated version of Raspberry PI's OS.
 2. Install libv4l-0 package, available in Raspbian: sudo aptitude install libv4l-0.
@@ -182,7 +185,7 @@ To set GPIO pin 17 to a PWM of 20%
 
 
 
-**NOTE** - I've had issues with this interfering with the PIs windows environment in the pasat so I don't tend to beet into the PI user interface.
+**NOTE** - I've had issues with this interfering with the PIs windows environment in the past with lockups so I don't tend to boot into the PI X windows interface.
 
 ##wifi
 Follow adafruits guide to seting up the wifi using the terminal on the Pi.  I found it easier to do it via the
