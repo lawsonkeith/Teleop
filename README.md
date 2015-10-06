@@ -10,7 +10,7 @@ There are 4 software modules:
 3. **teleop_server**		- Pi
 4. Webcam server		- Pi
  
-There are 6 hardware modules:
+There are 7 hardware modules:
 
 1. XBOX 360 gamepad		- Laptop	
 2. Wireless XBOX receiver	- Laptop
@@ -187,7 +187,9 @@ To set GPIO pin 17 to a PWM of 20%
 
 * echo "17=0.2" > /dev/pi-blaster
 
-To test just use a multimeter and some echo commands, write down on paper what you need to send to your servos to get them to do what you want.  Check my server code for my values, yours will be close.
+To test just use a multimeter and some echo commands, write down on paper what you need to send to your servos to get them to do what you want.  Check my server code for my values, yours will be close luckily you can control them with the 0-3.3V offered by the PI as the control signal is unipolar.
+
+For the wiring loom I used an IDC connector and some 2.54mm header.
 
 **NOTE** - I've had issues with this interfering with the PIs windows environment in the past with lockups so I don't tend to boot into the PI X windows interface.  
 
