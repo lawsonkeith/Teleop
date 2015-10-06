@@ -23,6 +23,8 @@ There are 6 hardware modules:
 
 Functionally there is a remote RC car and a laptop operator control unit (Laptop).
 
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0015.JPG)
+
 ##quickstart commands cheat sheet
 1. [PC] ssh 192.168.1.8
 2. [PI] cd mjpeg-streamer
@@ -39,8 +41,6 @@ Functionally there is a remote RC car and a laptop operator control unit (Laptop
 
  
 ##General installation and usage
-Acquire the windows XBOX wireless driver and install the drivers.  There's a tutorial here http://www.s-config.com/archived-xbox-360-receiver-install-for-win-xp-and-win-7/ if you buy a cheap Chinese copy and can't get it working.
-The LED on the controller will indicate when it's paired.
 
 1. Run linux in a VM, get the controller running in windows then capture it in VMWAREs device capture menu.  
 2. The LED on the controller should stay the same indicating it's working.
@@ -59,10 +59,12 @@ The LED on the controller will indicate when it's paired.
 4. Resolution of the video stream has to be really low to get low latency.
 
 
-#Detailed explanations
+
+#Detailed explanation
 
 ##XBOX 360 controller testing
-This has been tested on Xubuntu 15.  Use the following commands to look for or test the XBOX controller.
+Acquire the windows XBOX wireless driver and install the drivers.  There's a tutorial here http://www.s-config.com/archived-xbox-360-receiver-install-for-win-xp-and-win-7/ if you buy a cheap Chinese copy and can't get it working.
+The LED on the controller will indicate when it's paired.  The drivers should already be on linux if it's a recent release, I used Xubuntu 15.  Use the following commands to look for or test the XBOX controller.
 
 1. use cat /proc/bus/input/devices, look at 'Handlers' if unsure!
 2. fftest /dev/input/event3
@@ -178,14 +180,16 @@ To set GPIO pin 17 to a PWM of 20%
 
 * echo "17=0.2" > /dev/pi-blaster
 
-![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0015.JPG)
 
+
+**NOTE** - I've had issues with this interfering with the PIs windows environment in the pasat so I don't tend to beet into the PI user interface.
 
 ##wifi
-Follow adafruits guide to seting up the wifi using the terminal on the Pi.
+Follow adafruits guide to seting up the wifi using the terminal on the Pi.  I found it easier to do it via the
+command line. 
 
 1. sudo apt-get install avahi-daemon
-
+2/ sudo nano /etc/network/interfaces
 
 ##Refs
 1. http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
