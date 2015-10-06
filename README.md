@@ -1,12 +1,14 @@
-## Teleop
+# Teleop introduction
 RC car teleop system with haptic feedback using C on a raspberry Pi.
+
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0019.JPG)
 
 There are 4 software modules:
 
 1. **teleop_client**		- Laptop
 2. Web browser client		- Laptop 
 3. **teleop_server**		- Pi
-4. Motion webcam server		- Pi
+4. Webcam server		- Pi
  
 There are 6 hardware modules:
 
@@ -17,9 +19,11 @@ There are 6 hardware modules:
 5. DCDC Converter		- Pi
 6. Webcam			- Pi
 
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/Schematic.png)
+
 Functionally there is a remote RC car and a laptop operator control unit (Laptop).
 
-##quickstart cheat sheet
+##quickstart commands cheat sheet
 1. [PC] ssh 192.168.1.8
 2. [PI] cd mjpeg-streamer
 3. [PI] ./mjpeg-streamer start
@@ -31,25 +35,31 @@ Functionally there is a remote RC car and a laptop operator control unit (Laptop
 9. [PC] sudo ./teleop_client /dev/input/event3 /dev/input/js0 192.168.1.8
 10.[PC] as required....   scp ../server/teleop_server.c pi@192.168.1.8:/home/pi/Teleop/server
 
-##usage
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/Screenshot_2015-09-27_17-24-26.png)
+
+ 
+##General installation and usage
 Acquire the windows XBOX wireless driver and install the drivers.  There's a tutorial here http://www.s-config.com/archived-xbox-360-receiver-install-for-win-xp-and-win-7/ if you buy a cheap Chinese copy and can't get it working.
 The LED on the controller will indicate when it's paired.
 
-1. Run the program inside a linux VM, get the controller running in windows then capture it in VMWAREs device capture menu.  
+1. Run linux in a VM, get the controller running in windows then capture it in VMWAREs device capture menu.  
 2. The LED on the controller should stay the same indicating it's working.
 3. Install the client code on the laptop then the server code on the raspberry pi.  
-4. The Pi needs the Monitor code installing on it too.
-5. Setup the Pi to boot it's server on startup as with the Monitor webcam device.  
-6. Wire up the Pi as per the attached schematic, power up.  
-7. Then boot the client code, you should be able to control the car and receive haptic feedback off the controller.
+4. Recomile both using make; resolve and dependencies.
+4. The Pi needs the video streamer server installing on it, check webcam.
+5. Wire up the Pi as per the attached schematic, power up.  
+6. Then boot the server then client code, you should be able to control the car and receive haptic feedback off the XBOX controller when the car crashes into walls etc.
 
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/Capture2.JPG)
 
 ##Limitations
-1. Currently if the server restarts the client doesn't reconnect.  Since this is just test code I think it's ok to relainch the client
+1. Run from command line currently.
 2. Currently the settings are passed by argument, this is a bit of a mess and should move over to ini files.
 3. Error checking is limited.
-4. Joystick device enumeration is hard coded e.g. js0 event3 etc.
+4. Resolution of the video stream has to be really low to get low latency.
 
+
+#Detailed explanations
 
 ##XBOX 360 controller testing
 This has been tested on Xubuntu 15.  Use the following commands to look for or test the XBOX controller.
@@ -58,10 +68,11 @@ This has been tested on Xubuntu 15.  Use the following commands to look for or t
 2. fftest /dev/input/event3
 3. jstest /dev/input/js0
 4. ls /dev/input
+5. I didn't have to install anything in linux, all the pain was in windows.
  
 
 ##Installing video streaming on the pi
-To do this it's best to run a lower res to get a ffaster update, I run at 320x240 and zoom in on the web page.
+To do this it's best to run a lower res to get a faster update, I run at <320x240 and zoom in on the web page.
 
 1. Make sure you have an updated version of Raspberry PI's OS.
 2. Install libv4l-0 package, available in Raspbian: sudo aptitude install libv4l-0.
@@ -117,6 +128,9 @@ sudo apt-get instal raspberrypi-ui-mods
 
 
 ##MPU6050
+The PI uses a 6050 IMU.  First off oyu have to enable I2C on the pi, wire it up then test it using the commands in 'scripts'. Again there may be some dependencies.  The server transmits impacts back to the client to transmit to the
+operator as haptic feedback using the XBOX force feedback.
+
 http://www.instructables.com/id/Reading-I2C-Inputs-in-Raspberry-Pi-using-C/?ALLSTEPS
 
 1. Install i2c tools...
@@ -130,7 +144,7 @@ http://www.instructables.com/id/Reading-I2C-Inputs-in-Raspberry-Pi-using-C/?ALLS
 
 
 ##Pi Blaster
-The PWM on the Pi is done with the Pi blaster Daemon.  In this the Pi receives commands over the FIFO.
+The PWM on the Pi is done with the Pi blaster Daemon.  The server sends data to the servos direct from the Pi and in software to the PI-BLASTER FIFO.
 
 1. sudo apt-get install autoconf
 2. git clone https://github.com/sarfata/pi-blaster.git
@@ -153,6 +167,8 @@ GPIO number| Pin in P1 header
 23   |    P1-16
 24   |    P1-18
 25   |    P1-22
+     
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/Capture.JPG)
       
 To completely turn on GPIO pin 17:
 
@@ -161,6 +177,8 @@ To completely turn on GPIO pin 17:
 To set GPIO pin 17 to a PWM of 20%
 
 * echo "17=0.2" > /dev/pi-blaster
+
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0015.JPG)
 
 
 ##wifi
