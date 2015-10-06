@@ -19,15 +19,29 @@ There are 6 hardware modules:
 
 Functionally there is a remote RC car and a laptop operator control unit (Laptop).
 
+##quickstart cheat sheet
+1. [PC] ssh 192.168.1.8
+2. [PI] cd mjpeg-streamer
+3. [PI] ./mjpeg-streamer start
+4. [PI] cd ~/Teleop/server
+5. [PI] sudo ./teleop_server
+6. [PC] firefox http://192.168.1.8:8080/?action=stream
+7. [PC] Player-removable-devices->microsoft XBOX->Capture
+8. [PC] cd ~/client
+9. [PC] sudo ./teleop_client /dev/input/event3 /dev/input/js0 192.168.1.8
+10.[PC] as required....   scp ../server/teleop_server.c pi@192.168.1.8:/home/pi/Teleop/server
+
 ##usage
 Acquire the windows XBOX wireless driver and install the drivers.  There's a tutorial here http://www.s-config.com/archived-xbox-360-receiver-install-for-win-xp-and-win-7/ if you buy a cheap Chinese copy and can't get it working.
 The LED on the controller will indicate when it's paired.
 
-Run the program inside a linux VM, get the controller running in windows then capture it in VMWAREs device capture menu.  The LED ont he controller should stay the same indicating it's working.
-
-Install the client code on the laptop then the server code on the raspberry pi.  The Pi needs the Monitor code installing on it too.
-
-Setup the Pi to boot it's server on startup as with the Monitor webcam device.  Wire up the Pi as per the attached schematic, power up.  Then boot the client code, you should be able to control the car and receive haptic feedback off the controller.
+1. Run the program inside a linux VM, get the controller running in windows then capture it in VMWAREs device capture menu.  
+2. The LED on the controller should stay the same indicating it's working.
+3. Install the client code on the laptop then the server code on the raspberry pi.  
+4. The Pi needs the Monitor code installing on it too.
+5. Setup the Pi to boot it's server on startup as with the Monitor webcam device.  
+6. Wire up the Pi as per the attached schematic, power up.  
+7. Then boot the client code, you should be able to control the car and receive haptic feedback off the controller.
 
 
 ##Limitations
@@ -46,18 +60,20 @@ This has been tested on Xubuntu 15.  Use the following commands to look for or t
 4. ls /dev/input
  
 
-##Installing Motion on the Pi
-Install motion on the pi as follows:
+##Installing video streaming on the pi
+To do this it's best to run a lower res to get a ffaster update, I run at 320x240 and zoom in on the web page.
 
-1. Look at http://www.instructables.com/id/Raspberry-Pi-remote-webcam/
-2. sudo apt-get install motion
-3. sudo nano /etc/motion/motion.conf; follow instructables info
-4. sudo nano /etc/default/motion; follow instructables info
-5. sudo service motion start; starts service
-6. sudo service motion stop; stops service
-7. firefox 192.168.1.6:8081; launch browser
-	
-Note - I could only get the remote viewing working on my linux laptop.
+1. Make sure you have an updated version of Raspberry PI's OS.
+2. Install libv4l-0 package, available in Raspbian: sudo aptitude install libv4l-0.
+3. Connect the web camera to USB. The web camera must be Linux compatible; to check this, make sure /dev/video0 file is available on Raspberry PI, else the camera does not have a Linux driver or required extra configuration to work (this issue is not discussed here).
+4. Download mjpg-streamer-rpi.tar.gz archive on Raspberry PI and extract it. Destination folder is not relevant. You don't need root access if you are using the default pi user. Go to mjpg-streamer folder, where you extracted the tar.gz file.
+5. Open mjpg-streamer.sh file; this is a simple bash script to control the mini-webserver. The header contains some writable parameters, as refresh rate or resolution. The default settings should work in most situations.
+6. In sh file Halve video res then  set YUV to 'true'.
+7. Start the server with ./mjpg-streamer.sh start command in the current folder.
+8. Run your prefered web browser and go to http://raspberrypi:8080/?action=stream (where raspberrypi is it's IP address). You should see the image from the webcam. Current version has some issues with Chrome, just use Firefox if the image is not refreshed.
+9. If the system doesn't work, see the mjpg-streamer.log file for debug info.
+
+
 	
 ##Git/misc cmds
 Usefull cmds:
@@ -70,6 +86,7 @@ Usefull cmds:
 6. make | head
 7. git reset --hard origin/master (force local to repo ver)
 
+
 ##UDP tests
 send data to a client (Pi) interactively:
 
@@ -80,6 +97,7 @@ look for open port on:
 1. netstat -u -a
 2. netstat -lnpu
 
+
 ##nano
 Some usefull nano cmds...
 
@@ -89,10 +107,6 @@ Some usefull nano cmds...
 4. CTRL+U uncut
 5. F4 		SEL DN
 
-##references
-Usfull notes etc.
-Linux timers - 2net.co.uk: periodic tasks in linux
-IMU pulled from PiBits repo.
 
 ##Pi Cmds
 General housekeeping..
@@ -100,6 +114,7 @@ General housekeeping..
 sudo apt-get update
 sudo apt-get dist-upgrade
 sudo apt-get instal raspberrypi-ui-mods
+
 
 ##MPU6050
 http://www.instructables.com/id/Reading-I2C-Inputs-in-Raspberry-Pi-using-C/?ALLSTEPS
@@ -147,6 +162,7 @@ To set GPIO pin 17 to a PWM of 20%
 
 * echo "17=0.2" > /dev/pi-blaster
 
+
 ##wifi
 Follow adafruits guide to seting up the wifi using the terminal on the Pi.
 
@@ -154,6 +170,8 @@ Follow adafruits guide to seting up the wifi using the terminal on the Pi.
 
 
 ##Refs
-http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
-http://gnosis.cx/publish/programming/sockets2.html
-http://www.2net.co.uk/tutorial/periodic_threads
+1. http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
+2. http://gnosis.cx/publish/programming/sockets2.html
+3. http://www.2net.co.uk/tutorial/periodic_threads
+4. IMU pulled from PiBits repo.
+5. Use fftest and jstest for XBOX code

@@ -137,7 +137,7 @@ int main(int argc, char** argv)
 		// Haptic feedback
 		if(Accel > 280) {
 			if(Count ==0) {
-				Count = 3;
+				Count = 2;
 				FF_Rumble(Accel);
 			}
 		}
@@ -202,29 +202,6 @@ void UDP_Init(char *ip_address)
 }//END UDP_Init
 
 
-
-// Setup a 20 Hz Timer to poll the server on
-// use POSIX timers
-//
-void Task_Init(void)
-{
-	signal (SIGALRM, TimedTask);
-	new.it_interval.tv_sec = 0; 
-	new.it_interval.tv_usec = 50000; //50ms = 20Hz = 50000us
-	new.it_value.tv_sec = 0;
-	new.it_value.tv_usec = 50000;
-   
-	old.it_interval.tv_sec = 0;
-	old.it_interval.tv_usec = 0;
-	old.it_value.tv_sec = 0;
-	old.it_value.tv_usec = 0;
-   
-	if (setitimer (ITIMER_REAL, &new, &old) < 0) {
-      die("Task_Init: timer init failed\n");
-	}
-	
-	strcpy(Msg.endmsg,"EndMsg!");
-}//END Task_Init
 
 
 // JS_Read  Left axis is throttle, right axis is steering
@@ -337,7 +314,7 @@ void FF_Rumble(unsigned int magnitude)
 {
 	static int init = 1;
 	
-	if(init = 1) {
+	if(init == 1) {
 		init = 0;
 		
 		/* download a periodic sinusoidal effect & store for futuer playback */
