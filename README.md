@@ -1,5 +1,5 @@
 # Teleop introduction
-RC car teleop system with haptic feedback using C on a raspberry Pi.  This uses much hardware from the XBOX 360 to create a very budget teleop system.
+RC car teleop system with haptic feedback using C on a raspberry Pi.  This uses much hardware from the XBOX 360 to create a very budget teleop system, if you already own a PI and an XBOX you should be able to get going for under £20.
 
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0019.JPG)
 
@@ -18,16 +18,17 @@ There are 6 hardware modules:
 4. Wifi dongle 1000mw		- Pi	
 5. DCDC Converter		- Pi
 6. XBOX Webcam			- Pi
+7. Wiring loom			- Pi
 
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/Schematic.png)
 
-Functionally there is a remote RC car and a laptop operator control unit (Laptop).
+Functionally there is a remote RC car and a laptop operator control unit (OCU).
 
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0015.JPG)
 
-##quickstart commands cheat sheet
+##quickstart shell commands cheat sheet
 1. [PC] ssh 192.168.1.8
-2. [PI] cd mjpeg-streamer
+2. [PI] cd Teleop/mjpeg-streamer
 3. [PI] ./mjpeg-streamer start
 4. [PI] cd ~/Teleop/server
 5. [PI] sudo ./teleop_server
@@ -42,15 +43,18 @@ Functionally there is a remote RC car and a laptop operator control unit (Laptop
  
 ##General installation and usage
 
-1. Run linux in a VM, get the controller running in windows then capture it in VMWAREs device capture menu.  
-2. The LED on the controller should stay the same indicating it's working.
-3. Install the client code on the laptop then the server code on the raspberry pi.  
-4. Recomile both using make; resolve and dependencies.
-4. The Pi needs the video streamer server installing on it, check webcam.
-5. Wire up the Pi as per the attached schematic, power up.  
-6. Then boot the server then client code, you should be able to control the car and receive haptic feedback off the XBOX controller when the car crashes into walls etc.
+1. Setup the PI wifi.
+2. Get XBOX xontroller working in windows.
+3. Run linux in a VM, get the controller running in windows then capture it in VMWAREs device capture menu. 
+4. The LED on the controller should stay the same indicating it's working.  Check with jstest.
+5. Install the client code on the laptop then the server code on the raspberry pi.  
+6. Recompile both using make; resolve and dependencies.
+7. The Pi needs the video streamer server installing on it, then check webcam in Linux on the PC.  
+8. Wire up the Pi as per the attached schematic, power up.
+9. Check the IMU works.
+10. Then run the server then client code, you should be able to control the car and receive haptic feedback off the XBOX controller when the car crashes into walls etc.
 
-![](https://github.com/lawsonkeith/Teleop/raw/master/images/Capture2.JPG)
+
 
 ##Limitations
 1. Run from command line currently.
@@ -60,7 +64,6 @@ Functionally there is a remote RC car and a laptop operator control unit (Laptop
 5. I didn't implement the LEDs on the schematic.
 6. I used a smaller dongle type USB which had limited range with my TALK TALK router.
 7. Because the coding for the mjpeg takes place on the pi the image res is limited, perhaps a better camera would help here i.e. PI-camera.
-
 
 
 #Detailed explanation
@@ -75,6 +78,9 @@ The LED on the controller will indicate when it's paired.  The drivers should al
 4. ls /dev/input, you should see the joystick FIFOs here.
 5. I didn't have to install anything in linux (apart from maybe jstest), all the pain was in windows.
  
+![](https://github.com/lawsonkeith/Teleop/raw/master/images/Capture2.JPG)
+
+Test it in windows first, in 'devices and printers' you can check all the controls work on the gamepad.  Then test in linux with jstest and fftest.  
 
 ##Installing video streaming on the pi
 To do this it's best to run a lower res to get a faster update, I run at <320x240 and zoom in on the web page.  On higher res it was un-usable.
@@ -88,7 +94,6 @@ To do this it's best to run a lower res to get a faster update, I run at <320x24
 7. Start the server with ./mjpg-streamer.sh start command in the current folder.
 8. Run your prefered web browser and go to http://raspberrypi:8080/?action=stream (where raspberrypi is it's IP address). You should see the image from the webcam. Current version has some issues with Chrome, just use Firefox if the image is not refreshed.
 9. If the system doesn't work, see the mjpg-streamer.log file for debug info.
-
 
 	
 ##Git/misc cmds
@@ -133,8 +138,7 @@ sudo apt-get instal raspberrypi-ui-mods
 
 
 ##MPU6050
-The PI uses a 6050 IMU.  First off oyu have to enable I2C on the pi, wire it up then test it using the commands in 'scripts'. Again there may be some dependencies.  The server transmits impacts back to the client to transmit to the
-operator as haptic feedback using the XBOX force feedback.
+The PI uses a MPU6050 IMU.  First off you have to enable I2C on the pi, wire it up then test it using the commands in 'scripts'. Again there may be some dependencies.  The server transmits impacts back to the client to transmit to the operator as haptic feedback using the XBOX force feedback.
 
 http://www.instructables.com/id/Reading-I2C-Inputs-in-Raspberry-Pi-using-C/?ALLSTEPS
 
@@ -183,13 +187,13 @@ To set GPIO pin 17 to a PWM of 20%
 
 * echo "17=0.2" > /dev/pi-blaster
 
+To test just use a multimeter and some echo commands, write down on paper what you need to send to your servos to get them to do what you want.  Check my server code for my values, yours will be close.
 
-
-**NOTE** - I've had issues with this interfering with the PIs windows environment in the past with lockups so I don't tend to boot into the PI X windows interface.
+**NOTE** - I've had issues with this interfering with the PIs windows environment in the past with lockups so I don't tend to boot into the PI X windows interface.  
 
 ##wifi
 Follow adafruits guide to seting up the wifi using the terminal on the Pi.  I found it easier to do it via the
-command line. 
+command line and had issues with the GUI in x windows. 
 
 1. sudo apt-get install avahi-daemon
 2/ sudo nano /etc/network/interfaces
