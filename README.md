@@ -29,12 +29,13 @@ Functionally there is a remote RC car and a laptop operator control unit (Laptop
 1. [PC] ssh 192.168.1.8
 2. [PI] cd mjpeg-streamer
 3. [PI] ./mjpeg-streamer start
-4. [PI] cd ~/Teleop/server
+4. [PI] cd ~/server
 5. [PI] sudo ./teleop_server
 6. [PC] firefox http://192.168.1.8:8080/?action=stream
 7. [PC] Player-removable-devices->microsoft XBOX->Capture
 8. [PC] cd ~/client
 9. [PC] sudo ./teleop_client /dev/input/event3 /dev/input/js0 192.168.1.8
+	    cat /proc/bus/input/devices (if device ID has changed and you get error msgs)
 10.[PC] as required....   scp ../server/teleop_server.c pi@192.168.1.8:/home/pi/Teleop/server
 
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/Screenshot_2015-09-27_17-24-26.png)

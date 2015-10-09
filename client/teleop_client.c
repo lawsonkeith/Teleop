@@ -130,7 +130,7 @@ int main(int argc, char** argv)
 		JS_Read(&Fore,&Port);
 		UDP_Send(Fore, Port, Wdog++, &Accel);
 		
-		printf("\n%d,%d,%X,%X",Fore,Port,Accel,Wdog);
+		printf("\nF:%d,P:%d,A:%X,W:%X",Fore,Port,Accel,Wdog);
 		if(Count>0)
 			Count--;
 		
@@ -236,8 +236,12 @@ void JS_Read(int *Fore, int *Port)
 		if (axes) {
 			*Fore = axis[1] / 32.768;
 			*Port = axis[3] / 32.768;
-			
+
 			LimitIntMag(Fore,1000);
+			if(*Fore > 0)
+				*Fore *= 0.2;			//slow teleop down!!
+			else
+				*Fore *= 0.5;
 			LimitIntMag(Port,1000);
 		}
 
@@ -332,7 +336,7 @@ void FF_Rumble(unsigned int magnitude)
 		effects.u.periodic.envelope.fade_level = 0;
 		effects.trigger.button = 0;
 		effects.trigger.interval = 0;
-		effects.replay.length = 500;  /* .5 seconds */
+		effects.replay.length = 700;  /* .5 seconds */
 		effects.replay.delay = 0;
 
 		if (ioctl(fd_e, EVIOCSFF, &effects) < 0) {
