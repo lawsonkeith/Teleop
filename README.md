@@ -26,7 +26,7 @@ Functionally there is a remote RC car and a laptop operator control unit (OCU).
 
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/DSC_0015.JPG)
 
-##quickstart shell commands cheat sheet
+## quickstart shell commands cheat sheet
 1. [PC] ssh 192.168.1.8
 2. [PI] cd Teleop/mjpeg-streamer
 3. [PI] ./mjpeg-streamer start
@@ -42,7 +42,7 @@ Functionally there is a remote RC car and a laptop operator control unit (OCU).
 ![](https://github.com/lawsonkeith/Teleop/raw/master/images/Screenshot_2015-09-27_17-24-26.png)
 
  
-##General installation and usage
+## General installation and usage
 
 1. Setup the PI wifi.
 2. Get XBOX xontroller working in windows.
@@ -57,7 +57,7 @@ Functionally there is a remote RC car and a laptop operator control unit (OCU).
 
 
 
-##Limitations
+## Limitations
 1. Run from command line currently.
 2. Currently the settings are passed by argument, this is a bit of a mess and should move over to ini files.
 3. Error checking is limited.
@@ -67,9 +67,9 @@ Functionally there is a remote RC car and a laptop operator control unit (OCU).
 7. Because the coding for the mjpeg takes place on the pi the image res is limited, perhaps a better camera would help here i.e. PI-camera.
 
 
-#Detailed explanation
+# Detailed explanation
 
-##XBOX 360 controller testing
+## XBOX 360 controller testing
 Acquire the windows XBOX wireless driver and install the drivers.  There's a tutorial here http://www.s-config.com/archived-xbox-360-receiver-install-for-win-xp-and-win-7/ if you buy a cheap Chinese copy and can't get it working.
 The LED on the controller will indicate when it's paired.  The drivers should already be on linux if it's a recent release, I used Xubuntu 15.  Use the following commands to look for or test the XBOX controller.
 
@@ -83,7 +83,7 @@ The LED on the controller will indicate when it's paired.  The drivers should al
 
 Test it in windows first, in 'devices and printers' you can check all the controls work on the gamepad.  Then test in linux with jstest and fftest.  
 
-##Installing video streaming on the pi
+## Installing video streaming on the pi
 To do this it's best to run a lower res to get a faster update, I run at <320x240 and zoom in on the web page.  On higher res it was un-usable.
 
 1. Make sure you have an updated version of Raspberry PI's OS.
@@ -97,7 +97,7 @@ To do this it's best to run a lower res to get a faster update, I run at <320x24
 9. If the system doesn't work, see the mjpg-streamer.log file for debug info.
 
 	
-##Git/misc cmds
+## Git/misc cmds
 Usefull cmds:
 
 1. git clone https://github.com/lawsonkeith/Teleop.git
@@ -109,7 +109,7 @@ Usefull cmds:
 7. git reset --hard origin/master (force local to repo ver)
 
 
-##UDP tests
+## UDP tests
 send data to a client (Pi) interactively:
 
 1. ncat -vv 192.168.1.6 8888 -u
@@ -120,7 +120,7 @@ look for open port on:
 2. netstat -lnpu
 
 
-##nano
+## nano
 Some usefull nano cmds...
 
 1. CTRL+6 block sel
@@ -130,7 +130,7 @@ Some usefull nano cmds...
 5. F4 		SEL DN
 
 
-##Pi Cmds
+## Pi Cmds
 General housekeeping..
 
 sudo apt-get update
@@ -138,7 +138,7 @@ sudo apt-get dist-upgrade
 sudo apt-get instal raspberrypi-ui-mods
 
 
-##MPU6050
+## MPU6050
 The PI uses a MPU6050 IMU.  First off you have to enable I2C on the pi, wire it up then test it using the commands in 'scripts'. Again there may be some dependencies.  The server transmits impacts back to the client to transmit to the operator as haptic feedback using the XBOX force feedback.
 
 http://www.instructables.com/id/Reading-I2C-Inputs-in-Raspberry-Pi-using-C/?ALLSTEPS
@@ -153,7 +153,7 @@ http://www.instructables.com/id/Reading-I2C-Inputs-in-Raspberry-Pi-using-C/?ALLS
 8. The MPU605 should appear as 68
 
 
-##Pi Blaster
+## Pi Blaster
 The PWM on the Pi is done with the Pi blaster Daemon.  The server sends data to the servos direct from the Pi and in software to the PI-BLASTER FIFO.
 
 1. sudo apt-get install autoconf
@@ -194,21 +194,22 @@ For the wiring loom I used an IDC connector and some 2.54mm header.
 
 **NOTE** - I've had issues with this interfering with the PIs windows environment in the past with lockups so I don't tend to boot into the PI X windows interface.  
 
-##wifi
+## wifi
 Follow adafruits guide to seting up the wifi using the terminal on the Pi.  I found it easier to do it via the
 command line and had issues with the GUI in x windows. 
 
 1. sudo apt-get install avahi-daemon
 2/ sudo nano /etc/network/interfaces
 
-##Refs
+## Refs
 1. http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fork
 2. http://gnosis.cx/publish/programming/sockets2.html
 3. http://www.2net.co.uk/tutorial/periodic_threads
 4. IMU pulled from PiBits repo.
 5. Use fftest and jstest for XBOX code
 
-##Pi3 update 2017
+## Pi3 update 2017
+
 To list available formats for you webcam:
 1.v4l2-ctl --list-formats
 
