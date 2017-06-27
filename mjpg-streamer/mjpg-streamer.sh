@@ -1,10 +1,10 @@
 #!/bin/bash
 
 VIDEO_DEV="/dev/video0"
-FRAME_RATE="15"
-RESOLUTION="160x120"
+FRAME_RATE="10"
+RESOLUTION="1200x960"
 PORT="8080"
-YUV="true"
+YUV="false"
 
 MJPG_STREAMER_DIR="$(dirname $0)"
 MJPG_STREAMER_BIN="mjpg_streamer"

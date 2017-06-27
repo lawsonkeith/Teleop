@@ -207,3 +207,21 @@ command line and had issues with the GUI in x windows.
 3. http://www.2net.co.uk/tutorial/periodic_threads
 4. IMU pulled from PiBits repo.
 5. Use fftest and jstest for XBOX code
+
+##Pi3 update 2017
+To list available formats for you webcam:
+1.v4l2-ctl --list-formats
+
+
+This article describes some performance issues.  Particularly that mjpg vs YUYV.
+At 640x480 the PI is maxed on YUYV but on MJPEG it's cruzin at about 10%.  Really YUYV
+is a dead loss if you want fast video.
+
+1. http://www.linuxcircle.com/2013/02/06/faster-video-streaming-on-raspberry-media-server-with-mjpg-streamer/
+2. YUYV 320x240 max (100% PX)
+3. MJPG 1200x960 max (20% PX)
+
+This article fixes a bug that stops mjpeg streaming working:
+1.https://www.raspberrypi.org/forums/viewtopic.php?t=97983
+Use it to install mjpeg streamer then copy the binaries to telop server dir or 
+copy the .sh file to the build dir for debugging.
