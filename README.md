@@ -212,8 +212,8 @@ command line and had issues with the GUI in x windows.
 
 To list available formats for you webcam:
 
-1.v4l2-ctl --list-formats
-2.v4l2-ctl --list-formats-ext | less
+1. v4l2-ctl --list-formats
+2. v4l2-ctl --list-formats-ext | less
 
 This article describes some performance issues.  Particularly that mjpg vs YUYV, at 640x480 the PI is maxed on YUYV but on MJPEG it's cruzin at about 10%.  Really YUYV is a dead loss if you want fast video.
 
@@ -223,7 +223,7 @@ This article describes some performance issues.  Particularly that mjpg vs YUYV,
 
 This article fixes a bug that stops mjpeg streaming working:
 
-1.https://www.raspberrypi.org/forums/viewtopic.php?t=97983
+1. https://www.raspberrypi.org/forums/viewtopic.php?t=97983
 
 Use it to install mjpeg streamer then copy the binaries to telop server dir or 
 copy the .sh file to the build dir for debugging.
