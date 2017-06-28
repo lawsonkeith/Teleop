@@ -221,9 +221,25 @@ This article describes some performance issues.  Particularly that mjpg vs YUYV,
 2. YUYV 320x240 max (100% PX)
 3. MJPG 1200x960 max (20% PX)
 
-This article fixes a bug that stops mjpeg streaming working:
+This article fixes a bug that stops mjpeg streaming working (previously YUYV only works):
 
 1. https://www.raspberrypi.org/forums/viewtopic.php?t=97983
 
 Use it to install mjpeg streamer then copy the binaries to telop server dir or 
 copy the .sh file to the build dir for debugging.
+
+### Notes
+a. mjpg stream from camera 10x faster than taking yuyv
+b. with mjpg stream can easily run max image res camera
+c. Can access over 3g with port forwarding on router [IP] / [8080] / [ALL]
+d. 3g adds a lot of latency and busts you back to 160x120 - for my internet connection:
+
+Ping | Download | Upload
+--- | --- | ---
+207 ms | 9.53 Mb/s | 1.05 Mb/s
+
+### VPN Test
+
+1. PIVPN
+2. 2048 Key
+3. UDP
